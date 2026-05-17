@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BlueChat</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d0f14; color: #e8eaf0; font-family: 'Segoe UI', sans-serif; height: 100dvh; display: flex; align-items: center; justify-content: center; }
+#app { width: 100%; max-width: 420px; height: 100dvh; max-height: 860px; background: #161920; border-radius: 28px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 32px 80px rgba(0,0,0,0.6); }
+.screen { display: flex; flex-direction: column; height: 100%; }
+.hidden { display: none !important; }
+
+/* CONNECT SCREEN */
+.hero { padding: 40px 24px 20px; background: linear-gradient(160deg,#0d1733,#0d0f14); }
+.hero h1 { font-size: 30px; font-weight: 800; background: linear-gradient(135deg,#fff,#4f8ef7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { color: #7a8099; font-size: 14px; margin-top: 6px; }
+.ip-box { margin: 20px 24px 0; padding: 14px 16px; background: #1e2230; border: 1px solid #2a2f3d; border-radius: 14px; }
+.ip-box label { font-size: 11px; color: #7a8099; text-transform: uppercase; letter-spacing: 1px; }
+.ip-box input { width: 100%; background: none; border: none; outline: none; color: #e8eaf0; font-size: 18px; font-weight: 700; margin-top: 4px; }
+.connect-btn { margin: 12px 24px 0; padding: 14px; background: #4f8ef7; border: none; border-radius: 16px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+.connect-btn:hover { background: #3a7aee; }
+.status-bar { margin: 12px 24px 0; padding: 10px 14px; border-radius: 12px; font-size: 13px; text-align: center; background: #1e2230; color: #7a8099; }
+.status-bar.connected { background: #0d2a1a; color: #2ecc71; }
+.status-bar.error { background: #2a0d0d; color: #e74c3c; }
+
+/* CHAT SCREEN */
+.topbar { display: flex; align-items: center; gap: 12px; padding: 16px 16px; border-bottom: 1px solid #2a2f3d; background: #161920; flex-shrink: 0; }
+.back-btn { width: 36px; height: 36px; background: #1e2230; border: 1px solid #2a2f3d; border-radius: 50%; cursor: pointer; color: #e8eaf0; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg,#7b5ea7,#4f8ef7); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.peer-info { flex: 1; }
+.peer-name { font-size: 16px; font-weight: 700; }
+.peer-status { font-size: 12px; color: #7a8099; margin-top: 2px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; background: #2ecc71; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+.messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.msg-row { display: flex; flex-direction: column; }
+.msg-row.sent { align-items: flex-end; }
+.msg-row.recv { align-items: flex-start; }
+.bubble { max-width: 75%; padding: 10px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.sent .bubble { background: #1a3a6e; color: #e8f0ff; border-bottom-right-radius: 4px; }
+.recv .bubble { background: #1e2230; color: #d4d9e8; border: 1px solid #2a2f3d; border-bottom-left-radius: 4px; }
+.msg-time { font-size: 11px; color: #7a8099; margin-top: 3px; padding: 0 4px; }
+.tick { font-size: 12px; }
+.tick.blue { color: #4f8ef7; }
+
+/* File bubble */
+.file-bub { max-width: 75%; background: #1e2230; border: 1px solid #2a2f3d; border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.file-row { display: flex; align-items: center; gap: 10px; }
+.ficon { font-size: 26px; }
+.fname { font-size: 13px; font-weight: 600; }
+.fsize { font-size: 11px; color: #7a8099; }
+.pbar { height: 4px; background: #2a2f3d; border-radius: 4px; overflow: hidden; }
+.pfill { height: 100%; background: linear-gradient(90deg,#7b5ea7,#4f8ef7); transition: width 0.2s; }
+.plabel { font-size: 11px; color: #7a8099; text-align: right; }
+
+.status-msg { text-align: center; font-size: 12px; color: #7a8099; margin: 4px 0; }
+
+/* INPUT BAR */
+.input-bar { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; background: #161920; border-top: 1px solid #2a2f3d; flex-shrink: 0; }
+.att-btn { width: 40px; height: 40px; background: #1e2230; border: 1px solid #2a2f3d; border-radius: 50%; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; color: #7a8099; flex-shrink: 0; }
+.att-btn:hover { background: #2a2f3d; }
+#file-input { display: none; }
+.msg-wrap { flex: 1; background: #1e2230; border: 1px solid #2a2f3d; border-radius: 20px; padding: 10px 14px; }
+#msg-input { width: 100%; background: none; border: none; outline: none; color: #e8eaf0; font-size: 14px; resize: none; max-height: 80px; line-height: 1.4; font-family: inherit; }
+#msg-input::placeholder { color: #7a8099; }
+.send-btn { width: 40px; height: 40px; background: #4f8ef7; border: none; border-radius: 50%; cursor: pointer; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 12px rgba(79,142,247,0.4); }
+.send-btn:hover { background: #3a7aee; }
+
+#toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(16px); background: #1e2230; border: 1px solid #2a2f3d; color: #e8eaf0; padding: 9px 18px; border-radius: 30px; font-size: 13px; z-index: 999; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: #2a2f3d; border-radius: 4px; }
+@media(max-width:480px){ #app { border-radius: 0; max-height: 100dvh; } }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SCREEN 1: CONNECT -->
+  <div class="screen" id="screen-connect">
+    <div class="hero">
+      <h1>BlueChat 🔵</h1>
+      <p>Same WiFi pe dono devices connect karain</p>
+    </div>
+
+    <div class="ip-box">
+      <label>Server IP Address</label>
+      <input type="text" id="ip-input" placeholder="192.168.1.4" value="192.168.1.4"/>
+    </div>
+
+    <button class="connect-btn" onclick="connectToServer()">
+      🔗 Connect
+    </button>
+
+    <div class="status-bar" id="conn-status-bar">
+      Server IP dalo aur Connect dabao
+    </div>
+  </div>
+
+  <!-- SCREEN 2: CHAT -->
+  <div class="screen hidden" id="screen-chat">
+    <div class="topbar">
+      <button class="back-btn" onclick="goBack()">←</button>
+      <div class="avatar">💬</div>
+      <div class="peer-info">
+        <div class="peer-name">BlueChat</div>
+        <div class="peer-status"><span class="dot"></span>Connected</div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="status-msg">🔐 Connected via WiFi (Same Network)</div>
+    </div>
+
+    <div class="input-bar">
+      <button class="att-btn" onclick="document.getElementById('file-input').click()">📎</button>
+      <input type="file" id="file-input" onchange="sendFile(event)"/>
+      <div class="msg-wrap">
+        <textarea id="msg-input" rows="1" placeholder="Message likho…"
+          oninput="autoResize(this)"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}">
+        </textarea>
+      </div>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+<div id="toast"></div>
+
+<script>
+let ws = null;
+
+function toast(msg, dur=3000){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), dur);
+}
+
+function connectToServer(){
+  const ip = document.getElementById('ip-input').value.trim();
+  if(!ip){ toast('⚠️ IP address dalo!'); return; }
+
+  const bar = document.getElementById('conn-status-bar');
+  bar.textContent = '⏳ Connecting…';
+  bar.className = 'status-bar';
+
+  ws = new WebSocket('ws://'+ip+':3000');
+
+  ws.onopen = function(){
+    bar.textContent = '✅ Connected!';
+    bar.className = 'status-bar connected';
+    setTimeout(()=>{
+      document.getElementById('screen-connect').classList.add('hidden');
+      document.getElementById('screen-chat').classList.remove('hidden');
+      addStatus('🔗 Dono devices connected hain!');
+    }, 600);
+  };
+
+  ws.onmessage = function(event){
+    try{
+      const data = JSON.parse(event.data);
+      if(data.type === 'text'){
+        addMessage('recv', data.text);
+        // Send ACK
+        ws.send(JSON.stringify({type:'ack'}));
+      } else if(data.type === 'ack'){
+        markDelivered();
+      } else if(data.type === 'file'){
+        receiveFile(data);
+      }
+    } catch(e){}
+  };
+
+  ws.onclose = function(){
+    toast('📵 Connection toot gayi!');
+    addStatus('🔴 Disconnected');
+  };
+
+  ws.onerror = function(){
+    bar.textContent = '❌ Connect nahi hua — IP check karo ya server chalu karo';
+    bar.className = 'status-bar error';
+    toast('❌ Connection failed!');
+  };
+}
+
+function goBack(){
+  if(ws) ws.close();
+  document.getElementById('screen-chat').classList.add('hidden');
+  document.getElementById('screen-connect').classList.remove('hidden');
+}
+
+// ── SEND TEXT ──
+function sendMsg(){
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if(!text || !ws || ws.readyState!==WebSocket.OPEN) return;
+  input.value=''; autoResize(input);
+  addMessage('sent', text);
+  ws.send(JSON.stringify({type:'text', text:text}));
+}
+
+// ── SEND FILE ──
+function sendFile(event){
+  const file = event.target.files[0];
+  if(!file || !ws || ws.readyState!==WebSocket.OPEN) return;
+  event.target.value='';
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const base64 = e.target.result;
+    const msgEl = addFileBubble('sent', file.name, file.size);
+
+    // Simulate progress
+    let p=0;
+    const iv = setInterval(()=>{
+      p+=5; updateProgress(msgEl,p);
+      if(p>=100){
+        clearInterval(iv);
+        updateProgress(msgEl,100,true);
+        // Send file
+        ws.send(JSON.stringify({
+          type:'file',
+          name: file.name,
+          size: file.size,
+          mime: file.type,
+          data: base64
+        }));
+      }
+    }, 50);
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── RECEIVE FILE ──
+function receiveFile(data){
+  const msgEl = addFileBubble('recv', data.name, data.size);
+  let p=0;
+  const iv = setInterval(()=>{
+    p+=8; updateProgress(msgEl,p);
+    if(p>=100){
+      clearInterval(iv);
+      updateProgress(msgEl,100,true);
+      // Download link
+      const link = document.createElement('a');
+      link.href = data.data;
+      link.download = data.name;
+      link.style.cssText='font-size:12px;color:#4f8ef7;display:block;margin-top:4px;';
+      link.textContent = '⬇️ Download '+data.name;
+      msgEl.querySelector('.file-bub').appendChild(link);
+    }
+  }, 80);
+}
+
+// ── UI ──
+function addMessage(side, text){
+  const area = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row '+side;
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  row.innerHTML = `
+    <div class="bubble">${esc(text)}</div>
+    <div class="msg-time">
+      ${time}
+      ${side==='sent'?'<span class="tick" id="tick-'+Date.now()+'">✓</span>':''}
+    </div>`;
+  area.appendChild(row);
+  area.scrollTop=area.scrollHeight;
+  return row;
+}
+
+function addFileBubble(side, name, size){
+  const area = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row '+side;
+  const time = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  row.innerHTML=`
+    <div class="file-bub">
+      <div class="file-row">
+        <div class="ficon">${getIcon(name)}</div>
+        <div>
+          <div class="fname">${esc(name)}</div>
+          <div class="fsize">${fmtSize(size)}</div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+      <div class="plabel">0%</div>
+    </div>
+    <div class="msg-time">${time} ${side==='sent'?'<span class="tick">✓</span>':''}</div>`;
+  area.appendChild(row);
+  area.scrollTop=area.scrollHeight;
+  return row;
+}
+
+function addStatus(text){
+  const area=document.getElementById('messages');
+  const el=document.createElement('div');
+  el.className='status-msg'; el.textContent=text;
+  area.appendChild(el); area.scrollTop=area.scrollHeight;
+}
+
+function updateProgress(rowEl, pct, done=false){
+  if(!rowEl) return;
+  const fill=rowEl.querySelector('.pfill');
+  const label=rowEl.querySelector('.plabel');
+  if(fill) fill.style.width=pct+'%';
+  if(label) label.textContent=done?'✅ Complete':pct+'%';
+}
+
+function markDelivered(){
+  const ticks=document.querySelectorAll('#messages .msg-row.sent .tick');
+  if(ticks.length){ const last=ticks[ticks.length-1]; last.textContent='✓✓'; last.classList.add('blue'); }
+}
+
+function autoResize(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getIcon(n){ const m={pdf:'📄',png:'🖼️',jpg:'🖼️',jpeg:'🖼️',gif:'🖼️',mp3:'🎵',mp4:'🎬',zip:'🗜️',doc:'📝',docx:'📝',txt:'📃'}; return m[n.split('.').pop().toLowerCase()]||'📁'; }
+function fmtSize(b){ return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+</script>
+</body>
+</html>
